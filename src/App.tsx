@@ -11,6 +11,7 @@ import AccountDetail from "./pages/AccountDetail";
 import Titles from "./pages/Titles";
 import TitleDetail from "./pages/TitleDetail";
 import Scenarios from "./pages/Scenarios";
+import Pipeline from "./pages/Pipeline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
           <Route path="/accounts/:id" element={<ProtectedRoute><AccountDetail /></ProtectedRoute>} />
+          <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
           <Route path="/titles" element={<ProtectedRoute><Titles /></ProtectedRoute>} />
           <Route path="/titles/:id" element={<ProtectedRoute><TitleDetail /></ProtectedRoute>} />
           <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
