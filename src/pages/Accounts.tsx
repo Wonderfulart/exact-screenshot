@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, ArrowUpDown } from "lucide-react";
 import { useAccounts } from "@/hooks/useAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -30,42 +30,85 @@ const formatCurrency = (amount: number) =>
 const formatDate = (dateStr: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
 
+type SortOption = "company" | "last_contact" | "waffling" | "budget";
+
 const Accounts = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [businessTypeFilter, setBusinessTypeFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<SortOption>("company");
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const { data: accounts = [], isLoading } = useAccounts();
 
-  const filteredAccounts = accounts.filter((account) => {
-    const matchesSearch =
-      account.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (account.contact_name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (account.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "all" || account.decision_certainty === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadge = (certainty: string | null) => {
-    const styles: Record<string, string> = {
-      firm: "bg-success/10 text-success",
-      leaning: "bg-primary/10 text-primary",
-      waffling: "bg-warning/10 text-warning",
-      at_risk: "bg-danger/10 text-danger",
+  // Extract unique business types and cities for filter dropdowns
+  const { businessTypes, cities } = useMemo(() => {
+    const types = new Set<string>();
+    const citySet = new Set<string>();
+    accounts.forEach((account) => {
+      if (account.business_type) types.add(account.business_type);
+      if (account.city) citySet.add(account.city);
+    });
+    return {
+      businessTypes: Array.from(types).sort(),
+      cities: Array.from(citySet).sort(),
     };
-    const labels: Record<string, string> = {
-      firm: "Firm",
-      leaning: "Leaning",
-      waffling: "Waffling",
-      at_risk: "At Risk",
+  }, [accounts]);
+
+  const filteredAndSortedAccounts = useMemo(() => {
+    let result = accounts.filter((account) => {
+      const matchesSearch =
+        account.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (account.contact_name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (account.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || account.decision_certainty === statusFilter;
+
+      const matchesBusinessType =
+        businessTypeFilter === "all" || account.business_type === businessTypeFilter;
+
+      const matchesCity =
+        cityFilter === "all" || account.city === cityFilter;
+
+      return matchesSearch && matchesStatus && matchesBusinessType && matchesCity;
+    });
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "company":
+          return a.company_name.localeCompare(b.company_name);
+        case "last_contact":
+          const dateA = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0;
+          const dateB = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0;
+          return dateB - dateA; // Most recent first
+        case "waffling":
+          return (b.waffling_score || 0) - (a.waffling_score || 0); // Highest first
+        case "budget":
+          return (b.budget_range_high || 0) - (a.budget_range_high || 0); // Highest first
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [accounts, searchQuery, statusFilter, businessTypeFilter, cityFilter, sortBy]);
+
+  const getStatusIndicator = (certainty: string | null) => {
+    const config: Record<string, { color: string; bg: string; label: string }> = {
+      firm: { color: "bg-success", bg: "bg-success/10", label: "Firm" },
+      leaning: { color: "bg-primary", bg: "bg-primary/10", label: "Leaning" },
+      waffling: { color: "bg-warning", bg: "bg-warning/10", label: "Waffling" },
+      at_risk: { color: "bg-danger", bg: "bg-danger/10", label: "At Risk" },
     };
-    if (!certainty) return null;
+    if (!certainty || !config[certainty]) return null;
+    const { color, bg, label } = config[certainty];
     return (
-      <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium", styles[certainty])}>
-        {labels[certainty]}
+      <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium", bg)}>
+        <span className={cn("h-2 w-2 rounded-full", color)} />
+        {label}
       </span>
     );
   };
@@ -92,8 +135,8 @@ const Accounts = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative flex-1 min-w-[280px]">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by company, contact, or city..."
@@ -102,8 +145,9 @@ const Accounts = () => {
               className="pl-9"
             />
           </div>
+          
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -113,6 +157,43 @@ const Accounts = () => {
               <SelectItem value="leaning">Leaning</SelectItem>
               <SelectItem value="waffling">Waffling</SelectItem>
               <SelectItem value="at_risk">At Risk</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={businessTypeFilter} onValueChange={setBusinessTypeFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Business Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {businessTypes.map((type) => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="City" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {cities.map((city) => (
+                <SelectItem key={city} value={city}>{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <SelectTrigger className="w-[160px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="company">Company Name</SelectItem>
+              <SelectItem value="last_contact">Last Contact</SelectItem>
+              <SelectItem value="waffling">Waffling Score</SelectItem>
+              <SelectItem value="budget">Budget (High)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -140,43 +221,51 @@ const Accounts = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAccounts.map((account) => {
-                  const waffling = getWafflingIndicator(account.waffling_score);
-                  return (
-                    <TableRow
-                      key={account.id}
-                      className="cursor-pointer transition-colors hover:bg-accent/50"
-                      onClick={() => navigate(`/accounts/${account.id}`)}
-                    >
-                      <TableCell className="font-medium">{account.company_name}</TableCell>
-                      <TableCell>{account.contact_name || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{account.city || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{account.business_type || "—"}</TableCell>
-                      <TableCell className="tabular-nums">
-                        {account.budget_range_low && account.budget_range_high
-                          ? `${formatCurrency(account.budget_range_low)} - ${formatCurrency(account.budget_range_high)}`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(account.decision_certainty)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className={cn("h-full transition-all", waffling.bg)}
-                              style={{ width: `${account.waffling_score || 0}%` }}
-                            />
+                {filteredAndSortedAccounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No contact records found matching your filters.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAndSortedAccounts.map((account) => {
+                    const waffling = getWafflingIndicator(account.waffling_score);
+                    return (
+                      <TableRow
+                        key={account.id}
+                        className="cursor-pointer transition-colors hover:bg-accent/50"
+                        onClick={() => navigate(`/accounts/${account.id}`)}
+                      >
+                        <TableCell className="font-medium">{account.company_name}</TableCell>
+                        <TableCell>{account.contact_name || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{account.city || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{account.business_type || "—"}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {account.budget_range_low && account.budget_range_high
+                            ? `${formatCurrency(account.budget_range_low)} - ${formatCurrency(account.budget_range_high)}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{getStatusIndicator(account.decision_certainty)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={cn("h-full transition-all", waffling.bg)}
+                                style={{ width: `${account.waffling_score || 0}%` }}
+                              />
+                            </div>
+                            <span className={cn("text-sm tabular-nums", waffling.color)}>
+                              {account.waffling_score || 0}%
+                            </span>
                           </div>
-                          <span className={cn("text-sm tabular-nums", waffling.color)}>
-                            {account.waffling_score || 0}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(account.last_contact_date)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(account.last_contact_date)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           )}

@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Accounts from "./pages/Accounts";
 import AccountDetail from "./pages/AccountDetail";
 import Titles from "./pages/Titles";
+import TitleDetail from "./pages/TitleDetail";
 import Scenarios from "./pages/Scenarios";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
           <Route path="/accounts/:id" element={<ProtectedRoute><AccountDetail /></ProtectedRoute>} />
           <Route path="/titles" element={<ProtectedRoute><Titles /></ProtectedRoute>} />
+          <Route path="/titles/:id" element={<ProtectedRoute><TitleDetail /></ProtectedRoute>} />
           <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

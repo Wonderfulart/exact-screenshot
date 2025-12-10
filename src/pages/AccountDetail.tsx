@@ -38,6 +38,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { EmailGenerator } from "@/components/account/EmailGenerator";
+import { EmailHistory } from "@/components/account/EmailHistory";
 import { AccountFormDialog } from "@/components/account/AccountFormDialog";
 import { DealFormDialog } from "@/components/account/DealFormDialog";
 import { AIAccountSummary } from "@/components/account/AIAccountSummary";
@@ -462,24 +463,7 @@ const AccountDetail = () => {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="py-4">
-                {emailsSent.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No emails sent yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {emailsSent.map((email) => (
-                      <div key={email.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium">{email.subject}</p>
-                          <Badge variant="outline" className="capitalize">{email.email_type.replace(/_/g, " ")}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{email.body}</p>
-                        <p className="text-xs text-muted-foreground mt-2">{formatDate(email.created_at)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <EmailHistory accountId={account.id} />
             </AccordionContent>
           </AccordionItem>
 
