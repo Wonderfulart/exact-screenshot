@@ -1,5 +1,6 @@
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Priority {
   label: string;
@@ -12,6 +13,8 @@ interface AISummaryBannerProps {
 }
 
 export function AISummaryBanner({ greeting, priorities }: AISummaryBannerProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="animate-fade-in rounded-lg bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-6">
       <div className="flex items-start justify-between gap-4">
@@ -42,8 +45,13 @@ export function AISummaryBanner({ greeting, priorities }: AISummaryBannerProps) 
             </ul>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="shrink-0 text-primary hover:text-primary">
-          View all insights
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="shrink-0 text-primary hover:text-primary"
+          onClick={() => navigate("/accounts")}
+        >
+          View all contacts
           <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
       </div>
