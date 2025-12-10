@@ -1,9 +1,13 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, DollarSign, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, DollarSign, FileText, Plus } from "lucide-react";
 import { useTitles } from "@/hooks/useTitles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { TitleFormDialog } from "@/components/title/TitleFormDialog";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
@@ -19,6 +23,8 @@ const getDaysUntil = (dateStr: string | null) => {
 };
 
 const Titles = () => {
+  const navigate = useNavigate();
+  const [addTitleOpen, setAddTitleOpen] = useState(false);
   const { data: titles = [], isLoading } = useTitles();
 
   const totalGoal = titles.reduce((sum, t) => sum + (t.revenue_goal || 0), 0);
@@ -29,11 +35,17 @@ const Titles = () => {
     <AppLayout>
       <div className="space-y-8">
         {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Publications</h1>
-          <p className="mt-1 text-muted-foreground">
-            Track revenue and page sales across all titles
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Publications</h1>
+            <p className="mt-1 text-muted-foreground">
+              Track revenue and page sales across all titles
+            </p>
+          </div>
+          <Button onClick={() => setAddTitleOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Publication
+          </Button>
         </div>
 
         {/* Season Overview */}
@@ -85,7 +97,8 @@ const Titles = () => {
               return (
                 <div
                   key={title.id}
-                  className="animate-fade-in rounded-lg border border-border bg-card p-6 card-shadow transition-shadow hover:card-shadow-md"
+                  className="animate-fade-in rounded-lg border border-border bg-card p-6 card-shadow transition-shadow hover:card-shadow-md cursor-pointer"
+                  onClick={() => navigate(`/titles/${title.id}`)}
                 >
                   <div className="mb-4">
                     <h3 className="font-semibold text-foreground">{title.name}</h3>
@@ -197,6 +210,8 @@ const Titles = () => {
           </div>
         )}
       </div>
+
+      <TitleFormDialog open={addTitleOpen} onOpenChange={setAddTitleOpen} />
     </AppLayout>
   );
 };
