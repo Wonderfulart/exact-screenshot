@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles, LogOut, Kanban } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles, LogOut, Kanban, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ const navItems = [
   { label: "Pipeline", path: "/pipeline", icon: Kanban },
   { label: "Publications", path: "/titles", icon: BookOpen },
   { label: "Scenarios", path: "/scenarios", icon: GitBranch },
+  { label: "Reports", path: "/reports", icon: FileSpreadsheet },
 ];
 
 export function Sidebar() {
