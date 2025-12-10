@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { Search, Filter } from "lucide-react";
 import { useAccounts } from "@/hooks/useAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { AccountFormDialog } from "@/components/account/AccountFormDialog";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
@@ -29,8 +31,10 @@ const formatDate = (dateStr: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
 
 const Accounts = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
   const { data: accounts = [], isLoading } = useAccounts();
 
   const filteredAccounts = accounts.filter((account) => {
@@ -84,7 +88,7 @@ const Accounts = () => {
               Manage your advertiser relationships
             </p>
           </div>
-          <Button>Add Contact</Button>
+          <Button onClick={() => setAddAccountOpen(true)}>Add Contact</Button>
         </div>
 
         {/* Filters */}
@@ -142,6 +146,7 @@ const Accounts = () => {
                     <TableRow
                       key={account.id}
                       className="cursor-pointer transition-colors hover:bg-accent/50"
+                      onClick={() => navigate(`/accounts/${account.id}`)}
                     >
                       <TableCell className="font-medium">{account.company_name}</TableCell>
                       <TableCell>{account.contact_name || "—"}</TableCell>
@@ -177,6 +182,8 @@ const Accounts = () => {
           )}
         </div>
       </div>
+
+      <AccountFormDialog open={addAccountOpen} onOpenChange={setAddAccountOpen} />
     </AppLayout>
   );
 };
