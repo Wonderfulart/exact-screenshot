@@ -1,17 +1,31 @@
 import { CalendarDays } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { Title, formatCurrency, getDaysUntil } from "@/data/mockData";
+import type { Title } from "@/hooks/useTitles";
 import { cn } from "@/lib/utils";
 
 interface PublicationCardProps {
   title: Title;
 }
 
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
+
+const getDaysUntil = (dateStr: string | null) => {
+  if (!dateStr) return 0;
+  const target = new Date(dateStr);
+  const today = new Date();
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
+
 export function PublicationCard({ title }: PublicationCardProps) {
-  const revenuePercent = Math.round((title.revenue_booked / title.revenue_goal) * 100);
-  const pagesPercent = Math.round((title.pages_sold / title.pages_goal) * 100);
+  const revenuePercent = title.revenue_goal > 0
+    ? Math.round((title.revenue_booked / title.revenue_goal) * 100)
+    : 0;
+  const pagesPercent = title.pages_goal > 0
+    ? Math.round((title.pages_sold / title.pages_goal) * 100)
+    : 0;
   const daysUntil = getDaysUntil(title.deadline);
-  
+
   const getStatusColor = (percent: number) => {
     if (percent >= 75) return "success";
     if (percent >= 50) return "warning";
@@ -35,7 +49,7 @@ export function PublicationCard({ title }: PublicationCardProps) {
             status === "danger" && "bg-danger/10 text-danger"
           )}
         >
-          {status === "success" ? "●" : status === "warning" ? "●" : "●"}
+          ●
         </div>
       </div>
 
@@ -48,10 +62,7 @@ export function PublicationCard({ title }: PublicationCardProps) {
               {formatCurrency(title.revenue_booked)} / {formatCurrency(title.revenue_goal)}
             </span>
           </div>
-          <Progress 
-            value={revenuePercent} 
-            className="mt-1.5 h-2"
-          />
+          <Progress value={revenuePercent} className="mt-1.5 h-2" />
         </div>
 
         {/* Pages Progress */}
@@ -62,19 +73,18 @@ export function PublicationCard({ title }: PublicationCardProps) {
               {title.pages_sold} / {title.pages_goal}
             </span>
           </div>
-          <Progress 
-            value={pagesPercent} 
-            className="mt-1.5 h-2"
-          />
+          <Progress value={pagesPercent} className="mt-1.5 h-2" />
         </div>
       </div>
 
       {/* Deadline */}
       <div className="mt-4 flex items-center gap-1.5 text-sm">
         <CalendarDays className="h-4 w-4 text-muted-foreground" />
-        <span className={cn(
-          daysUntil <= 30 ? "text-danger" : daysUntil <= 60 ? "text-warning" : "text-muted-foreground"
-        )}>
+        <span
+          className={cn(
+            daysUntil <= 30 ? "text-danger" : daysUntil <= 60 ? "text-warning" : "text-muted-foreground"
+          )}
+        >
           {daysUntil} days until deadline
         </span>
       </div>

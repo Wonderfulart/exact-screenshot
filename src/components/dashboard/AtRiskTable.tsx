@@ -8,20 +8,47 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Deal,
-  getAccountById,
-  getTitleById,
-  formatCurrency,
-  getStageLabel,
-  getAdSizeLabel,
-} from "@/data/mockData";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useTitles } from "@/hooks/useTitles";
+import type { Deal } from "@/hooks/useDeals";
 
 interface AtRiskTableProps {
   deals: Deal[];
 }
 
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
+
+const getStageLabel = (stage: string) => {
+  const labels: Record<string, string> = {
+    prospect: "Prospect",
+    pitched: "Pitched",
+    negotiating: "Negotiating",
+    verbal_yes: "Verbal Yes",
+    contract_sent: "Contract Sent",
+    signed: "Signed",
+    lost: "Lost",
+  };
+  return labels[stage] || stage;
+};
+
+const getAdSizeLabel = (size: string) => {
+  const labels: Record<string, string> = {
+    quarter_page: "¼ Page",
+    half_page: "½ Page",
+    full_page: "Full Page",
+    two_page_spread: "2-Page Spread",
+  };
+  return labels[size] || size;
+};
+
 export function AtRiskTable({ deals }: AtRiskTableProps) {
+  const { data: accounts = [] } = useAccounts();
+  const { data: titles = [] } = useTitles();
+
+  const getAccount = (id: string) => accounts.find((a) => a.id === id);
+  const getTitle = (id: string) => titles.find((t) => t.id === id);
+
   if (deals.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-6 text-center card-shadow">
@@ -45,19 +72,19 @@ export function AtRiskTable({ deals }: AtRiskTableProps) {
         </TableHeader>
         <TableBody>
           {deals.map((deal) => {
-            const account = getAccountById(deal.account_id);
-            const title = getTitleById(deal.title_id);
-            
+            const account = getAccount(deal.account_id);
+            const title = getTitle(deal.title_id);
+
             return (
               <TableRow key={deal.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-warning" />
-                    <span className="font-medium">{account?.company_name}</span>
+                    <span className="font-medium">{account?.company_name || "Unknown"}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {title?.name.split(" ").slice(0, 2).join(" ")}...
+                  {title?.name ? `${title.name.split(" ").slice(0, 2).join(" ")}...` : "Unknown"}
                 </TableCell>
                 <TableCell>{getAdSizeLabel(deal.ad_size)}</TableCell>
                 <TableCell>

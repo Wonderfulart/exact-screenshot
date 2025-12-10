@@ -18,48 +18,58 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
-import { accounts, formatCurrency, formatDate } from "@/data/mockData";
+import { useAccounts } from "@/hooks/useAccounts";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
+
+const formatDate = (dateStr: string | null) =>
+  dateStr ? new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
 
 const Accounts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { data: accounts = [], isLoading } = useAccounts();
 
   const filteredAccounts = accounts.filter((account) => {
     const matchesSearch =
       account.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      account.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      account.city.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      (account.contact_name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (account.city?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+
     const matchesStatus =
       statusFilter === "all" || account.decision_certainty === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (certainty: string) => {
-    const styles = {
+  const getStatusBadge = (certainty: string | null) => {
+    const styles: Record<string, string> = {
       firm: "bg-success/10 text-success",
       leaning: "bg-primary/10 text-primary",
       waffling: "bg-warning/10 text-warning",
       at_risk: "bg-danger/10 text-danger",
     };
-    const labels = {
+    const labels: Record<string, string> = {
       firm: "Firm",
       leaning: "Leaning",
       waffling: "Waffling",
       at_risk: "At Risk",
     };
+    if (!certainty) return null;
     return (
-      <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium", styles[certainty as keyof typeof styles])}>
-        {labels[certainty as keyof typeof labels]}
+      <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium", styles[certainty])}>
+        {labels[certainty]}
       </span>
     );
   };
 
-  const getWafflingIndicator = (score: number) => {
-    if (score <= 25) return { color: "text-success", bg: "bg-success" };
-    if (score <= 50) return { color: "text-warning", bg: "bg-warning" };
+  const getWafflingIndicator = (score: number | null) => {
+    const s = score || 0;
+    if (s <= 25) return { color: "text-success", bg: "bg-success" };
+    if (s <= 50) return { color: "text-warning", bg: "bg-warning" };
     return { color: "text-danger", bg: "bg-danger" };
   };
 
@@ -105,56 +115,66 @@ const Accounts = () => {
 
         {/* Table */}
         <div className="rounded-lg border border-border bg-card card-shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead>Company</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Budget Range</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Waffling</TableHead>
-                <TableHead>Last Contact</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAccounts.map((account) => {
-                const waffling = getWafflingIndicator(account.waffling_score);
-                return (
-                  <TableRow
-                    key={account.id}
-                    className="cursor-pointer transition-colors hover:bg-accent/50"
-                  >
-                    <TableCell className="font-medium">{account.company_name}</TableCell>
-                    <TableCell>{account.contact_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{account.city}</TableCell>
-                    <TableCell className="text-muted-foreground">{account.business_type}</TableCell>
-                    <TableCell className="tabular-nums">
-                      {formatCurrency(account.budget_range_low)} - {formatCurrency(account.budget_range_high)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(account.decision_certainty)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={cn("h-full transition-all", waffling.bg)}
-                            style={{ width: `${account.waffling_score}%` }}
-                          />
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {[...Array(8)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead>Company</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>City</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Budget Range</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Waffling</TableHead>
+                  <TableHead>Last Contact</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAccounts.map((account) => {
+                  const waffling = getWafflingIndicator(account.waffling_score);
+                  return (
+                    <TableRow
+                      key={account.id}
+                      className="cursor-pointer transition-colors hover:bg-accent/50"
+                    >
+                      <TableCell className="font-medium">{account.company_name}</TableCell>
+                      <TableCell>{account.contact_name || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{account.city || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{account.business_type || "—"}</TableCell>
+                      <TableCell className="tabular-nums">
+                        {account.budget_range_low && account.budget_range_high
+                          ? `${formatCurrency(account.budget_range_low)} - ${formatCurrency(account.budget_range_high)}`
+                          : "—"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(account.decision_certainty)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={cn("h-full transition-all", waffling.bg)}
+                              style={{ width: `${account.waffling_score || 0}%` }}
+                            />
+                          </div>
+                          <span className={cn("text-sm tabular-nums", waffling.color)}>
+                            {account.waffling_score || 0}%
+                          </span>
                         </div>
-                        <span className={cn("text-sm tabular-nums", waffling.color)}>
-                          {account.waffling_score}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(account.last_contact_date)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(account.last_contact_date)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </AppLayout>
