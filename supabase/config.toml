@@ -1,10 +1,10 @@
 project_id = "hmjlzjshkmljxymfrgeo"
 
 [functions.generate-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-insights]
-verify_jwt = false
+verify_jwt = true
 
 [functions.daily-digest]
 verify_jwt = false
@@ -16,4 +16,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.account-insights]
-verify_jwt = false
+verify_jwt = true
