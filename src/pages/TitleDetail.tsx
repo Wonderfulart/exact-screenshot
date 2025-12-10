@@ -185,6 +185,10 @@ const TitleDetail = () => {
                 {daysUntil} days until deadline
               </Badge>
             )}
+            <Button variant="outline" size="sm" onClick={() => setEditTitleOpen(true)}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
           </div>
         </div>
 
@@ -369,6 +373,13 @@ const TitleDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Title Dialog */}
+      <TitleFormDialog
+        open={editTitleOpen}
+        onOpenChange={setEditTitleOpen}
+        title={title}
+      />
     </AppLayout>
   );
 };

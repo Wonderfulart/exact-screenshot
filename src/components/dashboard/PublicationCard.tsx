@@ -2,6 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { Title } from "@/hooks/useTitles";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface PublicationCardProps {
   title: Title;
@@ -18,6 +19,7 @@ const getDaysUntil = (dateStr: string | null) => {
 };
 
 export function PublicationCard({ title }: PublicationCardProps) {
+  const navigate = useNavigate();
   const revenuePercent = title.revenue_goal > 0
     ? Math.round((title.revenue_booked / title.revenue_goal) * 100)
     : 0;
@@ -35,7 +37,10 @@ export function PublicationCard({ title }: PublicationCardProps) {
   const status = getStatusColor(revenuePercent);
 
   return (
-    <div className="animate-fade-in rounded-lg border border-border bg-card p-5 card-shadow transition-shadow hover:card-shadow-md">
+    <div 
+      className="animate-fade-in rounded-lg border border-border bg-card p-5 card-shadow transition-shadow hover:card-shadow-md cursor-pointer"
+      onClick={() => navigate(`/titles/${title.id}`)}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <h3 className="font-semibold text-foreground line-clamp-1">{title.name}</h3>
