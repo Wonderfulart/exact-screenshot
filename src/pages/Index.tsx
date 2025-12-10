@@ -4,30 +4,30 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PublicationCard } from "@/components/dashboard/PublicationCard";
 import { NeedsAttentionList } from "@/components/dashboard/NeedsAttentionList";
 import { AtRiskTable } from "@/components/dashboard/AtRiskTable";
-import {
-  titles,
-  deals,
-  getNeedsAttentionAccounts,
-  getAtRiskDeals,
-  formatCurrency,
-} from "@/data/mockData";
+import { useTitles } from "@/hooks/useTitles";
+import { useNeedsAttentionAccounts } from "@/hooks/useAccounts";
+import { useAtRiskDeals, useDeals } from "@/hooks/useDeals";
+import { useAIInsights } from "@/hooks/useAIInsights";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
 
 const Dashboard = () => {
-  const needsAttention = getNeedsAttentionAccounts();
-  const atRiskDeals = getAtRiskDeals();
-  
-  // Calculate metrics
-  const totalBooked = titles.reduce((sum, t) => sum + t.revenue_booked, 0);
-  const totalGoal = titles.reduce((sum, t) => sum + t.revenue_goal, 0);
-  const gapToGoal = totalGoal - totalBooked;
-  const atRiskValue = atRiskDeals.reduce((sum, d) => sum + d.value, 0);
-  const openProposals = deals.filter(d => d.stage !== "signed" && d.stage !== "lost").length;
+  const { data: titles = [], isLoading: titlesLoading } = useTitles();
+  const { data: needsAttention = [], isLoading: attentionLoading } = useNeedsAttentionAccounts();
+  const { data: atRiskDeals = [], isLoading: riskLoading } = useAtRiskDeals();
+  const { data: allDeals = [] } = useDeals();
+  const { data: aiInsights, isLoading: insightsLoading } = useAIInsights();
 
-  const priorities = [
-    { label: "Oregon Coast Magazine deadline is in 53 days - $21,000 gap remaining", type: "danger" as const },
-    { label: "Salishan Coastal Lodge's $4,200 spread is at risk - no contact in 12 days", type: "warning" as const },
-    { label: "3 contracts pending signature worth $4,950 total", type: "success" as const },
-  ];
+  const isLoading = titlesLoading || attentionLoading || riskLoading;
+
+  // Calculate metrics
+  const totalBooked = titles.reduce((sum, t) => sum + (t.revenue_booked || 0), 0);
+  const totalGoal = titles.reduce((sum, t) => sum + (t.revenue_goal || 0), 0);
+  const gapToGoal = totalGoal - totalBooked;
+  const atRiskValue = atRiskDeals.reduce((sum, d) => sum + (d.value || 0), 0);
+  const openProposals = allDeals.filter((d) => d.stage !== "signed" && d.stage !== "lost").length;
 
   return (
     <AppLayout>
@@ -41,47 +41,70 @@ const Dashboard = () => {
         </div>
 
         {/* AI Summary Banner */}
-        <AISummaryBanner
-          greeting="Good morning! Here's your sales snapshot."
-          priorities={priorities}
-        />
+        {insightsLoading ? (
+          <Skeleton className="h-36 w-full rounded-lg" />
+        ) : (
+          <AISummaryBanner
+            greeting={aiInsights?.greeting || "Good day! Here's your sales snapshot."}
+            priorities={aiInsights?.priorities || []}
+          />
+        )}
 
         {/* Metrics Row */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label="Total Booked"
-            value={formatCurrency(totalBooked)}
-            subtext={`${Math.round((totalBooked / totalGoal) * 100)}% of goal`}
-            variant="default"
-          />
-          <MetricCard
-            label="Gap to Goal"
-            value={formatCurrency(gapToGoal)}
-            subtext="across all publications"
-            variant="warning"
-          />
-          <MetricCard
-            label="At-Risk Revenue"
-            value={formatCurrency(atRiskValue)}
-            subtext={`${atRiskDeals.length} proposals flagged`}
-            variant="danger"
-          />
-          <MetricCard
-            label="Open Proposals"
-            value={openProposals.toString()}
-            subtext="in pipeline"
-            variant="default"
-          />
+          {isLoading ? (
+            <>
+              <Skeleton className="h-28 rounded-lg" />
+              <Skeleton className="h-28 rounded-lg" />
+              <Skeleton className="h-28 rounded-lg" />
+              <Skeleton className="h-28 rounded-lg" />
+            </>
+          ) : (
+            <>
+              <MetricCard
+                label="Total Booked"
+                value={formatCurrency(totalBooked)}
+                subtext={totalGoal > 0 ? `${Math.round((totalBooked / totalGoal) * 100)}% of goal` : ""}
+                variant="default"
+              />
+              <MetricCard
+                label="Gap to Goal"
+                value={formatCurrency(gapToGoal)}
+                subtext="across all publications"
+                variant="warning"
+              />
+              <MetricCard
+                label="At-Risk Revenue"
+                value={formatCurrency(atRiskValue)}
+                subtext={`${atRiskDeals.length} proposals flagged`}
+                variant="danger"
+              />
+              <MetricCard
+                label="Open Proposals"
+                value={openProposals.toString()}
+                subtext="in pipeline"
+                variant="default"
+              />
+            </>
+          )}
         </div>
 
         {/* Publications Overview */}
         <section>
           <h2 className="mb-4 text-lg font-semibold text-foreground">Publications Overview</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {titles.map((title) => (
-              <PublicationCard key={title.id} title={title} />
-            ))}
-          </div>
+          {titlesLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-56 rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {titles.map((title) => (
+                <PublicationCard key={title.id} title={title} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Two Column Layout */}
@@ -94,7 +117,11 @@ const Dashboard = () => {
                 {needsAttention.length}
               </span>
             </h2>
-            <NeedsAttentionList accounts={needsAttention} />
+            {attentionLoading ? (
+              <Skeleton className="h-64 rounded-lg" />
+            ) : (
+              <NeedsAttentionList accounts={needsAttention} />
+            )}
           </section>
 
           {/* At-Risk Proposals */}
@@ -105,7 +132,11 @@ const Dashboard = () => {
                 {atRiskDeals.length}
               </span>
             </h2>
-            <AtRiskTable deals={atRiskDeals} />
+            {riskLoading ? (
+              <Skeleton className="h-64 rounded-lg" />
+            ) : (
+              <AtRiskTable deals={atRiskDeals} />
+            )}
           </section>
         </div>
       </div>
