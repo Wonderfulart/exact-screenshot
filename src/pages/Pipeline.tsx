@@ -5,8 +5,11 @@ import { useDeals } from "@/hooks/useDeals";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useTitles } from "@/hooks/useTitles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter } from "lucide-react";
+import { Filter, Download } from "lucide-react";
+import { exportToCSV, dealColumns } from "@/lib/exportUtils";
+import { toast } from "@/hooks/use-toast";
 
 const Pipeline = () => {
   const { data: deals = [], isLoading: dealsLoading } = useDeals();
@@ -20,6 +23,23 @@ const Pipeline = () => {
     ? deals 
     : deals.filter(d => d.title_id === titleFilter);
 
+  const handleExport = () => {
+    const exportData = filteredDeals.map((deal) => {
+      const account = accounts.find((a) => a.id === deal.account_id);
+      const title = titles.find((t) => t.id === deal.title_id);
+      return {
+        ...deal,
+        account_name: account?.company_name || "Unknown",
+        title_name: title?.name || "Unknown",
+      };
+    });
+    exportToCSV(exportData, "pipeline_export", dealColumns);
+    toast({
+      title: "Export complete",
+      description: `Exported ${exportData.length} proposals to CSV`,
+    });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -31,18 +51,24 @@ const Pipeline = () => {
               Drag proposals between stages to update their status
             </p>
           </div>
-          <Select value={titleFilter} onValueChange={setTitleFilter}>
-            <SelectTrigger className="w-[200px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="All Publications" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Publications</SelectItem>
-              {titles.map((title) => (
-                <SelectItem key={title.id} value={title.id}>{title.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Select value={titleFilter} onValueChange={setTitleFilter}>
+              <SelectTrigger className="w-[200px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="All Publications" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Publications</SelectItem>
+                {titles.map((title) => (
+                  <SelectItem key={title.id} value={title.id}>{title.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Kanban Board */}

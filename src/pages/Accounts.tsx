@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -23,6 +24,8 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AccountFormDialog } from "@/components/account/AccountFormDialog";
+import { BulkActionsToolbar } from "@/components/accounts/BulkActionsToolbar";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(amount);
@@ -34,12 +37,14 @@ type SortOption = "company" | "last_contact" | "waffling" | "budget";
 
 const Accounts = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [businessTypeFilter, setBusinessTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("company");
   const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { data: accounts = [], isLoading } = useAccounts();
 
   // Extract unique business types and cities for filter dropdowns
@@ -120,6 +125,24 @@ const Accounts = () => {
     return { color: "text-danger", bg: "bg-danger" };
   };
 
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredAndSortedAccounts.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredAndSortedAccounts.map((a) => a.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -198,6 +221,14 @@ const Accounts = () => {
           </Select>
         </div>
 
+        {/* Bulk Actions Toolbar */}
+        <BulkActionsToolbar
+          selectedIds={selectedIds}
+          accounts={filteredAndSortedAccounts}
+          onClearSelection={() => setSelectedIds([])}
+          onRefresh={handleRefresh}
+        />
+
         {/* Table */}
         <div className="rounded-lg border border-border bg-card card-shadow overflow-hidden">
           {isLoading ? (
@@ -210,6 +241,12 @@ const Accounts = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedIds.length === filteredAndSortedAccounts.length && filteredAndSortedAccounts.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>City</TableHead>
@@ -223,19 +260,29 @@ const Accounts = () => {
               <TableBody>
                 {filteredAndSortedAccounts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No contact records found matching your filters.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredAndSortedAccounts.map((account) => {
                     const waffling = getWafflingIndicator(account.waffling_score);
+                    const isSelected = selectedIds.includes(account.id);
                     return (
                       <TableRow
                         key={account.id}
-                        className="cursor-pointer transition-colors hover:bg-accent/50"
+                        className={cn(
+                          "cursor-pointer transition-colors hover:bg-accent/50",
+                          isSelected && "bg-primary/5"
+                        )}
                         onClick={() => navigate(`/accounts/${account.id}`)}
                       >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(account.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{account.company_name}</TableCell>
                         <TableCell>{account.contact_name || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{account.city || "—"}</TableCell>
