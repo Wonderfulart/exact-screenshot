@@ -31,6 +31,8 @@ import {
   AlertTriangle,
   Sparkles,
   Edit,
+  Heart,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +40,8 @@ import { cn } from "@/lib/utils";
 import { EmailGenerator } from "@/components/account/EmailGenerator";
 import { AccountFormDialog } from "@/components/account/AccountFormDialog";
 import { DealFormDialog } from "@/components/account/DealFormDialog";
+import { AIAccountSummary } from "@/components/account/AIAccountSummary";
+import { AccountHealthSection } from "@/components/account/AccountHealthSection";
 import { toast } from "sonner";
 import type { Account } from "@/hooks/useAccounts";
 import type { Deal } from "@/hooks/useDeals";
@@ -56,6 +60,8 @@ const AccountDetail = () => {
   const [editAccountOpen, setEditAccountOpen] = useState(false);
   const [addDealOpen, setAddDealOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+  const [allExpanded, setAllExpanded] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["contact", "deals", "email", "notes"]);
 
   // Fetch account
   const { data: account, isLoading: accountLoading } = useQuery({
@@ -200,14 +206,23 @@ const AccountDetail = () => {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">Account not found</p>
+          <p className="text-muted-foreground">Contact record not found</p>
           <Button variant="link" onClick={() => navigate("/accounts")}>
-            Back to Accounts
+            Back to Contact Records
           </Button>
         </div>
       </AppLayout>
     );
   }
+
+  const toggleAllSections = () => {
+    if (allExpanded) {
+      setExpandedSections([]);
+    } else {
+      setExpandedSections(["contact", "health", "deals", "email", "history", "notes"]);
+    }
+    setAllExpanded(!allExpanded);
+  };
 
   return (
     <AppLayout>
@@ -234,6 +249,9 @@ const AccountDetail = () => {
           </Button>
         </div>
 
+        {/* AI Summary Card */}
+        <AIAccountSummary account={account} deals={deals} />
+
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
@@ -243,7 +261,7 @@ const AccountDetail = () => {
                   <TrendingUp className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Deals</p>
+                  <p className="text-sm text-muted-foreground">Active Proposals</p>
                   <p className="text-2xl font-semibold">{deals.filter(d => !["signed", "lost"].includes(d.stage)).length}</p>
                 </div>
               </div>
@@ -292,8 +310,21 @@ const AccountDetail = () => {
           </Card>
         </div>
 
+        {/* Expand All Button */}
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={toggleAllSections}>
+            <ChevronsUpDown className="h-4 w-4 mr-2" />
+            {allExpanded ? "Collapse All" : "Expand All"}
+          </Button>
+        </div>
+
         {/* Main Content */}
-        <Accordion type="multiple" defaultValue={["contact", "deals", "email", "notes"]} className="space-y-4">
+        <Accordion 
+          type="multiple" 
+          value={expandedSections}
+          onValueChange={setExpandedSections}
+          className="space-y-4"
+        >
           {/* Contact Information */}
           <AccordionItem value="contact" className="border rounded-lg bg-card px-4">
             <AccordionTrigger className="hover:no-underline">
@@ -336,23 +367,36 @@ const AccountDetail = () => {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Active Deals */}
+          {/* Account Health */}
+          <AccordionItem value="health" className="border rounded-lg bg-card px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Account Health</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <AccountHealthSection account={account} deals={deals} />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Active Proposals */}
           <AccordionItem value="deals" className="border rounded-lg bg-card px-4">
             <AccordionTrigger className="hover:no-underline">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Deals & Proposals ({deals.length})</span>
+                <span className="font-medium">Proposals ({deals.length})</span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <div className="py-4">
                 <div className="flex justify-end mb-4">
                   <Button size="sm" onClick={() => setAddDealOpen(true)}>
-                    Add Deal
+                    Add Proposal
                   </Button>
                 </div>
                 {deals.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No deals yet</p>
+                  <p className="text-muted-foreground text-center py-4">No proposals yet</p>
                 ) : (
                   <Table>
                     <TableHeader>

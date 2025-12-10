@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.recalculate-waffling]
 verify_jwt = false
+
+[functions.account-insights]
+verify_jwt = false

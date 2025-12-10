@@ -166,11 +166,11 @@ export function DealFormDialog({ open, onOpenChange, accountId, deal, titles }: 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
-      toast.success(isEditing ? "Deal updated" : "Deal created");
+      toast.success(isEditing ? "Proposal updated" : "Proposal created");
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to save deal");
+      toast.error(error.message || "Failed to save proposal");
     },
   });
 
@@ -182,11 +182,11 @@ export function DealFormDialog({ open, onOpenChange, accountId, deal, titles }: 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deals"] });
-      toast.success("Deal deleted");
+      toast.success("Proposal deleted");
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to delete deal");
+      toast.error(error.message || "Failed to delete proposal");
     },
   });
 
@@ -198,7 +198,7 @@ export function DealFormDialog({ open, onOpenChange, accountId, deal, titles }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Deal" : "Add New Deal"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Proposal" : "Add New Proposal"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -309,7 +309,7 @@ export function DealFormDialog({ open, onOpenChange, accountId, deal, titles }: 
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <div>
                     <FormLabel className="text-base">At Risk</FormLabel>
-                    <p className="text-sm text-muted-foreground">Mark this deal as at risk</p>
+                    <p className="text-sm text-muted-foreground">Mark this proposal as at risk</p>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -350,7 +350,7 @@ export function DealFormDialog({ open, onOpenChange, accountId, deal, titles }: 
                 </Button>
                 <Button type="submit" disabled={mutation.isPending}>
                   {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {isEditing ? "Save Changes" : "Create Deal"}
+                  {isEditing ? "Save Changes" : "Create Proposal"}
                 </Button>
               </div>
             </div>
