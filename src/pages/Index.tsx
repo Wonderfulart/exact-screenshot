@@ -5,6 +5,8 @@ import { PublicationCard } from "@/components/dashboard/PublicationCard";
 import { NeedsAttentionList } from "@/components/dashboard/NeedsAttentionList";
 import { AtRiskTable } from "@/components/dashboard/AtRiskTable";
 import { AutomationDashboard } from "@/components/automations/AutomationDashboard";
+import { DeadlineAlertsWidget } from "@/components/dashboard/DeadlineAlertsWidget";
+import { StaleContactsWidget } from "@/components/dashboard/StaleContactsWidget";
 import { useTitles } from "@/hooks/useTitles";
 import { useNeedsAttentionAccounts } from "@/hooks/useAccounts";
 import { useAtRiskDeals, useDeals } from "@/hooks/useDeals";
@@ -110,6 +112,12 @@ const Dashboard = () => {
             </div>
           )}
         </section>
+
+        {/* Alerts Row - Deadlines & Stale Contacts */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DeadlineAlertsWidget />
+          <StaleContactsWidget />
+        </div>
 
         {/* Two Column Layout */}
         <div className="grid gap-8 lg:grid-cols-2">

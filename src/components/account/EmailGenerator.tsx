@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Sparkles, Copy, Check, Loader2, Save } from "lucide-react";
 import { useGenerateEmail } from "@/hooks/useGenerateEmail";
+import { useCreateActivity } from "@/hooks/useActivities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ export function EmailGenerator({ account, deals, titles }: EmailGeneratorProps) 
   const queryClient = useQueryClient();
 
   const generateEmail = useGenerateEmail();
+  const createActivity = useCreateActivity();
 
   const saveEmail = useMutation({
     mutationFn: async () => {
@@ -57,6 +59,16 @@ export function EmailGenerator({ account, deals, titles }: EmailGeneratorProps) 
         status: "draft",
       });
       if (error) throw error;
+
+      // Auto-log activity when email is saved
+      await createActivity.mutateAsync({
+        account_id: account.id,
+        deal_id: selectedDealId || null,
+        activity_type: "email",
+        title: `${emailTypeLabels[emailType]} email drafted`,
+        description: `Subject: ${generatedEmail.subject}`,
+        outcome: "pending",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["emails", "account", account.id] });
