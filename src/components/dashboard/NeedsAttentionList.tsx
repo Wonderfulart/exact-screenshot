@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { AlertCircle, Clock, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Account } from "@/hooks/useAccounts";
@@ -11,6 +12,8 @@ const formatDate = (dateStr: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
 
 export function NeedsAttentionList({ accounts }: NeedsAttentionListProps) {
+  const navigate = useNavigate();
+  
   const getReasonIcon = (account: Account) => {
     const lastContact = account.last_contact_date ? new Date(account.last_contact_date) : new Date(0);
     const fiveDaysAgo = new Date();
@@ -49,7 +52,8 @@ export function NeedsAttentionList({ accounts }: NeedsAttentionListProps) {
           return (
             <div
               key={account.id}
-              className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-accent/50"
+              className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+              onClick={() => navigate(`/accounts/${account.id}`)}
             >
               <div className="flex items-center gap-3">
                 <div
@@ -72,8 +76,15 @@ export function NeedsAttentionList({ accounts }: NeedsAttentionListProps) {
                   </div>
                 </div>
               </div>
-              <Button size="sm" variant="outline">
-                Callback
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/accounts/${account.id}`);
+                }}
+              >
+                View
               </Button>
             </div>
           );

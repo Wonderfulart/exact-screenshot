@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ const getAdSizeLabel = (size: string) => {
 };
 
 export function AtRiskTable({ deals }: AtRiskTableProps) {
+  const navigate = useNavigate();
   const { data: accounts = [] } = useAccounts();
   const { data: titles = [] } = useTitles();
 
@@ -76,7 +78,11 @@ export function AtRiskTable({ deals }: AtRiskTableProps) {
             const title = getTitle(deal.title_id);
 
             return (
-              <TableRow key={deal.id}>
+              <TableRow 
+                key={deal.id} 
+                className="cursor-pointer"
+                onClick={() => navigate(`/accounts/${deal.account_id}`)}
+              >
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-warning" />
@@ -96,7 +102,14 @@ export function AtRiskTable({ deals }: AtRiskTableProps) {
                   {formatCurrency(deal.value)}
                 </TableCell>
                 <TableCell>
-                  <Button size="sm" variant="ghost">
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/accounts/${deal.account_id}`);
+                    }}
+                  >
                     View
                   </Button>
                 </TableCell>
