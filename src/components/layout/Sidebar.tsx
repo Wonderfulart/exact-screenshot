@@ -1,6 +1,8 @@
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -10,6 +12,8 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { user, signOut } = useAuth();
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-card">
       <div className="flex h-full flex-col">
@@ -43,15 +47,28 @@ export function Sidebar() {
 
         {/* User Section */}
         <div className="border-t border-border p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-accent/50 px-3 py-2">
+          <div className="flex items-center gap-3 rounded-lg bg-accent/50 px-3 py-2 mb-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-              P
+              {user?.email?.[0]?.toUpperCase() || "U"}
             </div>
-            <div className="flex-1 truncate">
-              <p className="truncate text-sm font-medium text-foreground">PNW Marketing</p>
-              <p className="truncate text-xs text-muted-foreground">pnwmarketingteam@outlook.com</p>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {user?.email?.split("@")[0] || "User"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user?.email || ""}
+              </p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOut}
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
       </div>
     </aside>

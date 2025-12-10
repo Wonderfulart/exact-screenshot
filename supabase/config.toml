@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.ai-insights]
 verify_jwt = false
+
+[functions.daily-digest]
+verify_jwt = false
+
+[functions.detect-at-risk]
+verify_jwt = false
+
+[functions.recalculate-waffling]
+verify_jwt = false
