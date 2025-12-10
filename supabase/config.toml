@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.account-insights]
 verify_jwt = true
+
+[functions.deadline-alerts]
+verify_jwt = false
+
+[functions.stale-contacts]
+verify_jwt = false
+
+[functions.run-all-automations]
+verify_jwt = false
