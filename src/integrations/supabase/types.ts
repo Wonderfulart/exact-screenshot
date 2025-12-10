@@ -74,6 +74,63 @@ export type Database = {
         }
         Relationships: []
       }
+      activities: {
+        Row: {
+          account_id: string
+          activity_type: string
+          completed_at: string | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          id: string
+          outcome: string | null
+          scheduled_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          activity_type: string
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          outcome?: string | null
+          scheduled_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          activity_type?: string
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          outcome?: string | null
+          scheduled_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           account_id: string

@@ -43,6 +43,7 @@ import { AccountFormDialog } from "@/components/account/AccountFormDialog";
 import { DealFormDialog } from "@/components/account/DealFormDialog";
 import { AIAccountSummary } from "@/components/account/AIAccountSummary";
 import { AccountHealthSection } from "@/components/account/AccountHealthSection";
+import { ActivityTimeline } from "@/components/account/ActivityTimeline";
 import { toast } from "sonner";
 import type { Account } from "@/hooks/useAccounts";
 import type { Deal } from "@/hooks/useDeals";
@@ -62,7 +63,7 @@ const AccountDetail = () => {
   const [addDealOpen, setAddDealOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(["contact", "deals", "email", "notes"]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["contact", "activity", "deals", "email", "notes"]);
 
   // Fetch account
   const { data: account, isLoading: accountLoading } = useQuery({
@@ -220,7 +221,7 @@ const AccountDetail = () => {
     if (allExpanded) {
       setExpandedSections([]);
     } else {
-      setExpandedSections(["contact", "health", "deals", "email", "history", "notes"]);
+      setExpandedSections(["contact", "health", "activity", "deals", "email", "history", "notes"]);
     }
     setAllExpanded(!allExpanded);
   };
@@ -378,6 +379,21 @@ const AccountDetail = () => {
             </AccordionTrigger>
             <AccordionContent>
               <AccountHealthSection account={account} deals={deals} />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Activity Timeline */}
+          <AccordionItem value="activity" className="border rounded-lg bg-card px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Activity Timeline</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="py-4">
+                <ActivityTimeline accountId={account.id} />
+              </div>
             </AccordionContent>
           </AccordionItem>
 
