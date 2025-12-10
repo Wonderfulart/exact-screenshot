@@ -19,12 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, ArrowUpDown } from "lucide-react";
-import { useAccounts } from "@/hooks/useAccounts";
+import { Search, Filter, ArrowUpDown, Mail } from "lucide-react";
+import { useAccounts, type Account } from "@/hooks/useAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AccountFormDialog } from "@/components/account/AccountFormDialog";
 import { BulkActionsToolbar } from "@/components/accounts/BulkActionsToolbar";
+import { QuickEmailDialog } from "@/components/email/QuickEmailDialog";
 import { useQueryClient } from "@tanstack/react-query";
 
 const formatCurrency = (amount: number) =>
@@ -45,6 +46,8 @@ const Accounts = () => {
   const [sortBy, setSortBy] = useState<SortOption>("company");
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailAccount, setEmailAccount] = useState<Account | null>(null);
   const { data: accounts = [], isLoading } = useAccounts();
 
   // Extract unique business types and cities for filter dropdowns
@@ -88,11 +91,11 @@ const Accounts = () => {
         case "last_contact":
           const dateA = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0;
           const dateB = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0;
-          return dateB - dateA; // Most recent first
+          return dateB - dateA;
         case "waffling":
-          return (b.waffling_score || 0) - (a.waffling_score || 0); // Highest first
+          return (b.waffling_score || 0) - (a.waffling_score || 0);
         case "budget":
-          return (b.budget_range_high || 0) - (a.budget_range_high || 0); // Highest first
+          return (b.budget_range_high || 0) - (a.budget_range_high || 0);
         default:
           return 0;
       }
@@ -141,6 +144,12 @@ const Accounts = () => {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["accounts"] });
+  };
+
+  const handleEmailClick = (e: React.MouseEvent, account: Account) => {
+    e.stopPropagation();
+    setEmailAccount(account);
+    setEmailDialogOpen(true);
   };
 
   return (
@@ -255,12 +264,13 @@ const Accounts = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Waffling</TableHead>
                   <TableHead>Last Contact</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedAccounts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       No contact records found matching your filters.
                     </TableCell>
                   </TableRow>
@@ -309,6 +319,16 @@ const Accounts = () => {
                         <TableCell className="text-muted-foreground">
                           {formatDate(account.last_contact_date)}
                         </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => handleEmailClick(e, account)}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -320,6 +340,14 @@ const Accounts = () => {
       </div>
 
       <AccountFormDialog open={addAccountOpen} onOpenChange={setAddAccountOpen} />
+      
+      {emailAccount && (
+        <QuickEmailDialog
+          open={emailDialogOpen}
+          onOpenChange={setEmailDialogOpen}
+          account={emailAccount}
+        />
+      )}
     </AppLayout>
   );
 };

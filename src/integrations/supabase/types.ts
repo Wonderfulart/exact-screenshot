@@ -191,6 +191,39 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body_template: string
+          created_at: string | null
+          email_type: string
+          id: string
+          is_default: boolean | null
+          name: string
+          subject_template: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_template: string
+          created_at?: string | null
+          email_type: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          subject_template: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_template?: string
+          created_at?: string | null
+          email_type?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          subject_template?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       emails_sent: {
         Row: {
           account_id: string
