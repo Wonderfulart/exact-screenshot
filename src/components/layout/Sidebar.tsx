@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles, LogOut, Kanban, FileSpreadsheet, FileText } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, GitBranch, Sparkles, LogOut, Kanban, FileSpreadsheet, FileText, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const navItems = [
   { label: "Publications", path: "/titles", icon: BookOpen },
   { label: "Scenarios", path: "/scenarios", icon: GitBranch },
   { label: "Reports", path: "/reports", icon: FileSpreadsheet },
+  { label: "Email Queue", path: "/email-queue", icon: CalendarClock },
 ];
 
 export function Sidebar() {

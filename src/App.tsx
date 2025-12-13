@@ -13,6 +13,7 @@ import TitleDetail from "./pages/TitleDetail";
 import Scenarios from "./pages/Scenarios";
 import Pipeline from "./pages/Pipeline";
 import Reports from "./pages/Reports";
+import EmailQueuePage from "./pages/EmailQueuePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/titles/:id" element={<ProtectedRoute><TitleDetail /></ProtectedRoute>} />
           <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/email-queue" element={<ProtectedRoute><EmailQueuePage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
