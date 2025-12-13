@@ -55,7 +55,7 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
   const queryClient = useQueryClient();
 
   const saveEmail = useMutation({
-    mutationFn: async (email: { subject: string; body: string }) => {
+    mutationFn: async ({ email, scheduledAt }: { email: { subject: string; body: string }; scheduledAt: Date | null }) => {
       const { error } = await supabase.from("emails_sent").insert({
         account_id: account.id,
         deal_id: deal?.id || null,
@@ -63,20 +63,25 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
         subject: email.subject,
         body: email.body,
         status: "draft" as const,
+        scheduled_at: scheduledAt?.toISOString() || null,
       });
       if (error) throw error;
+      return { scheduledAt };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["emails_sent"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduled_emails"] });
       createActivity.mutate({
         account_id: account.id,
         deal_id: deal?.id,
         activity_type: "email",
-        title: `Email draft saved: ${generatedEmail?.subject}`,
+        title: data.scheduledAt 
+          ? `Email scheduled: ${generatedEmail?.subject}` 
+          : `Email draft saved: ${generatedEmail?.subject}`,
         description: `Email type: ${EMAIL_TYPES.find(t => t.value === emailType)?.label}`,
         completed_at: new Date().toISOString(),
       });
-      toast.success("Email saved to history");
+      toast.success(data.scheduledAt ? "Email scheduled!" : "Email saved to history");
       setShowReviewModal(false);
       onOpenChange(false);
       resetState();
@@ -111,9 +116,9 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
     }
   };
 
-  const handleApproveAndSave = (email: { subject: string; body: string }) => {
+  const handleApproveAndSave = (email: { subject: string; body: string }, scheduledAt: Date | null) => {
     setGeneratedEmail(email);
-    saveEmail.mutate(email);
+    saveEmail.mutate({ email, scheduledAt });
   };
 
   const resetState = () => {

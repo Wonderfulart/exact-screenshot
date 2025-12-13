@@ -232,6 +232,7 @@ export type Database = {
           deal_id: string | null
           email_type: Database["public"]["Enums"]["email_type"]
           id: string
+          scheduled_at: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["email_status"]
           subject: string
@@ -243,6 +244,7 @@ export type Database = {
           deal_id?: string | null
           email_type: Database["public"]["Enums"]["email_type"]
           id?: string
+          scheduled_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_status"]
           subject: string
@@ -254,6 +256,7 @@ export type Database = {
           deal_id?: string | null
           email_type?: Database["public"]["Enums"]["email_type"]
           id?: string
+          scheduled_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_status"]
           subject?: string

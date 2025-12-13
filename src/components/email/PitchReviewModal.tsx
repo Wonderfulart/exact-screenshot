@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Check, Copy, Save } from "lucide-react";
+import { Pencil, Check, Copy, Save, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
+import { EmailScheduler } from "./EmailScheduler";
 
 interface PitchReviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   email: { subject: string; body: string } | null;
-  onApprove: (email: { subject: string; body: string }) => void;
+  onApprove: (email: { subject: string; body: string }, scheduledAt: Date | null) => void;
   isSaving?: boolean;
 }
 
@@ -26,6 +27,8 @@ export function PitchReviewModal({
   const [editedSubject, setEditedSubject] = useState("");
   const [editedBody, setEditedBody] = useState("");
   const [copied, setCopied] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+  const [showScheduler, setShowScheduler] = useState(false);
 
   useEffect(() => {
     if (email) {
@@ -33,6 +36,13 @@ export function PitchReviewModal({
       setEditedBody(email.body);
     }
   }, [email]);
+
+  useEffect(() => {
+    if (!open) {
+      setScheduledAt(null);
+      setShowScheduler(false);
+    }
+  }, [open]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`Subject: ${editedSubject}\n\n${editedBody}`);
@@ -42,7 +52,7 @@ export function PitchReviewModal({
   };
 
   const handleApprove = () => {
-    onApprove({ subject: editedSubject, body: editedBody });
+    onApprove({ subject: editedSubject, body: editedBody }, scheduledAt);
   };
 
   if (!email) return null;
@@ -83,15 +93,31 @@ export function PitchReviewModal({
                 id="body"
                 value={editedBody}
                 onChange={(e) => setEditedBody(e.target.value)}
-                rows={12}
+                rows={10}
                 className="resize-none"
               />
             ) : (
-              <div className="p-4 rounded-lg bg-muted/50 border min-h-[200px]">
+              <div className="p-4 rounded-lg bg-muted/50 border min-h-[150px] max-h-[200px] overflow-y-auto">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{editedBody}</p>
               </div>
             )}
           </div>
+
+          {/* Schedule Section */}
+          {showScheduler ? (
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <EmailScheduler scheduledAt={scheduledAt} onScheduleChange={setScheduledAt} />
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowScheduler(true)}
+              className="w-full gap-2"
+            >
+              <CalendarClock className="h-4 w-4" />
+              Schedule for Later
+            </Button>
+          )}
         </div>
 
         {/* Actions */}
@@ -121,8 +147,8 @@ export function PitchReviewModal({
             size="lg"
             className="bg-success hover:bg-success/90 text-success-foreground gap-2"
           >
-            <Save className="h-4 w-4" />
-            {isSaving ? "Saving..." : "Approve & Save"}
+            {scheduledAt ? <CalendarClock className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+            {isSaving ? "Saving..." : scheduledAt ? "Schedule Send" : "Approve & Save"}
           </Button>
         </div>
       </DialogContent>
