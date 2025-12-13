@@ -4,7 +4,7 @@ import { AutomationCard } from "./AutomationCard";
 import { useAutomations } from "@/hooks/useAutomations";
 import {
   Zap,
-  RefreshCw,
+  BarChart3,
   AlertTriangle,
   Calendar,
   Users,
@@ -30,13 +30,13 @@ export function AutomationDashboard() {
 
     switch (key) {
       case "recalculate-waffling":
-        return `${(result as { accounts_updated?: number }).accounts_updated || 0} scores updated`;
+        return `${(result as { accounts_updated?: number }).accounts_updated || 0} leads ranked`;
       case "detect-at-risk":
-        return `${(result as { deals_updated?: number }).deals_updated || 0} proposals flagged`;
+        return `${(result as { deals_updated?: number }).deals_updated || 0} opportunities flagged`;
       case "deadline-alerts":
         return `${(result as { alerts_count?: number }).alerts_count || 0} alerts found`;
       case "stale-contacts":
-        return `${(result as { stale_contacts_count?: number }).stale_contacts_count || 0} contacts need follow-up`;
+        return `${(result as { stale_contacts_count?: number }).stale_contacts_count || 0} need follow-up`;
       default:
         return undefined;
     }
@@ -49,10 +49,10 @@ export function AutomationDashboard() {
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Automations
+              Activity Feed
             </CardTitle>
             <CardDescription>
-              Run health checks and data analysis
+              Run analysis and get fresh insights
             </CardDescription>
           </div>
           <Button
@@ -63,7 +63,7 @@ export function AutomationDashboard() {
             {states["run-all"]?.isRunning ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Running All...
+                Running...
               </>
             ) : (
               <>
@@ -77,16 +77,16 @@ export function AutomationDashboard() {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AutomationCard
-            title="Waffling Scores"
-            description="Recalculate contact engagement scores"
-            icon={<RefreshCw className="h-4 w-4" />}
+            title="Lead Ranker"
+            description="Rank leads by engagement level"
+            icon={<BarChart3 className="h-4 w-4" />}
             state={states["recalculate-waffling"]}
             onRun={recalculateWaffling}
             resultPreview={getResultPreview("recalculate-waffling")}
           />
           <AutomationCard
-            title="At-Risk Detection"
-            description="Identify proposals needing attention"
+            title="Opportunity Watch"
+            description="Find proposals needing attention"
             icon={<AlertTriangle className="h-4 w-4" />}
             state={states["detect-at-risk"]}
             onRun={detectAtRisk}
@@ -94,23 +94,23 @@ export function AutomationDashboard() {
           />
           <AutomationCard
             title="Deadline Alerts"
-            description="Check publications due in 7 days"
+            description="Check deadlines in next 7 days"
             icon={<Calendar className="h-4 w-4" />}
             state={states["deadline-alerts"]}
             onRun={() => checkDeadlines(7)}
             resultPreview={getResultPreview("deadline-alerts")}
           />
           <AutomationCard
-            title="Stale Contacts"
-            description="Find contacts inactive 5+ days"
+            title="Follow-up Finder"
+            description="Find contacts to reconnect with"
             icon={<Users className="h-4 w-4" />}
             state={states["stale-contacts"]}
             onRun={() => checkStaleContacts(5)}
             resultPreview={getResultPreview("stale-contacts")}
           />
           <AutomationCard
-            title="Daily Digest"
-            description="Generate performance summary"
+            title="Daily Summary"
+            description="Get your performance overview"
             icon={<FileText className="h-4 w-4" />}
             state={states["daily-digest"]}
             onRun={generateDigest}
@@ -120,14 +120,14 @@ export function AutomationDashboard() {
         {/* Run All Summary */}
         {states["run-all"]?.lastResult && (
           <div className="mt-4 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Last Full Run Summary</h4>
+            <h4 className="font-medium text-sm mb-2">Last Analysis Summary</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <SummaryItem
-                label="Waffling Updated"
+                label="Leads Ranked"
                 value={(states["run-all"].lastResult.summary as { waffling_updated?: number })?.waffling_updated || 0}
               />
               <SummaryItem
-                label="At-Risk Detected"
+                label="At-Risk Found"
                 value={(states["run-all"].lastResult.summary as { at_risk_detected?: number })?.at_risk_detected || 0}
               />
               <SummaryItem
@@ -135,7 +135,7 @@ export function AutomationDashboard() {
                 value={(states["run-all"].lastResult.summary as { deadline_alerts?: number })?.deadline_alerts || 0}
               />
               <SummaryItem
-                label="Stale Contacts"
+                label="Need Follow-up"
                 value={(states["run-all"].lastResult.summary as { stale_contacts?: number })?.stale_contacts || 0}
               />
             </div>

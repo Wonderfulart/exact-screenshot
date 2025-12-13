@@ -61,7 +61,7 @@ export function Sidebar() {
                 )}
               >
                 <FileText className="h-5 w-5" />
-                Email Templates
+                Pitch Templates
               </button>
             </div>
           </nav>
