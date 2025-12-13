@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Copy, Check, Sparkles, FileText, Save } from "lucide-react";
+import { Loader2, Sparkles, FileText } from "lucide-react";
 import { useGenerateEmail } from "@/hooks/useGenerateEmail";
-import { useEmailTemplates, type EmailTemplate } from "@/hooks/useEmailTemplates";
+import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { useCreateActivity } from "@/hooks/useActivities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PitchReviewModal } from "./PitchReviewModal";
 import type { Account } from "@/hooks/useAccounts";
 import type { Deal } from "@/hooks/useDeals";
 import type { Title } from "@/hooks/useTitles";
@@ -45,9 +45,9 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
   const [emailType, setEmailType] = useState<string>("follow_up");
   const [customContext, setCustomContext] = useState("");
   const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null);
-  const [copied, setCopied] = useState(false);
   const [useTemplate, setUseTemplate] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const generateEmail = useGenerateEmail();
   const { data: templates } = useEmailTemplates(emailType);
@@ -77,6 +77,9 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
         completed_at: new Date().toISOString(),
       });
       toast.success("Email saved to history");
+      setShowReviewModal(false);
+      onOpenChange(false);
+      resetState();
     },
   });
 
@@ -90,6 +93,7 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
         customContext,
       });
       setGeneratedEmail(result);
+      setShowReviewModal(true);
     } catch (error) {
       toast.error("Failed to generate email");
     }
@@ -98,46 +102,42 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
   const handleApplyTemplate = () => {
     const template = templates?.find(t => t.id === selectedTemplateId);
     if (template) {
-      setGeneratedEmail({
+      const email = {
         subject: applyTemplateVariables(template.subject_template, account, title),
         body: applyTemplateVariables(template.body_template, account, title),
-      });
+      };
+      setGeneratedEmail(email);
+      setShowReviewModal(true);
     }
   };
 
-  const handleCopy = () => {
-    if (generatedEmail) {
-      navigator.clipboard.writeText(`Subject: ${generatedEmail.subject}\n\n${generatedEmail.body}`);
-      setCopied(true);
-      toast.success("Copied to clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleSave = () => {
-    if (generatedEmail) {
-      saveEmail.mutate(generatedEmail);
-    }
+  const handleApproveAndSave = (email: { subject: string; body: string }) => {
+    setGeneratedEmail(email);
+    saveEmail.mutate(email);
   };
 
   const resetState = () => {
     setGeneratedEmail(null);
     setCustomContext("");
     setSelectedTemplateId("");
+    setShowReviewModal(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => { onOpenChange(open); if (!open) resetState(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Quick Email - {account.company_name}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={(open) => { onOpenChange(open); if (!open) resetState(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Draft Pitch</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Create an email for {account.company_name}
+            </p>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-5 py-2">
             <div className="space-y-2">
               <Label>Email Type</Label>
-              <Select value={emailType} onValueChange={(v) => { setEmailType(v); setSelectedTemplateId(""); setGeneratedEmail(null); }}>
+              <Select value={emailType} onValueChange={(v) => { setEmailType(v); setSelectedTemplateId(""); }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -151,106 +151,103 @@ export function QuickEmailDialog({ open, onOpenChange, account, deal, title }: Q
 
             <div className="space-y-2">
               <Label>Generation Method</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant={!useTemplate ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1"
+                  className="w-full justify-center"
                   onClick={() => setUseTemplate(false)}
                 >
-                  <Sparkles className="h-4 w-4 mr-1" />
-                  AI Generate
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Draft
                 </Button>
                 <Button
                   variant={useTemplate ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1"
+                  className="w-full justify-center"
                   onClick={() => setUseTemplate(true)}
                 >
-                  <FileText className="h-4 w-4 mr-1" />
+                  <FileText className="h-4 w-4 mr-2" />
                   Template
                 </Button>
               </div>
             </div>
+
+            {!useTemplate ? (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Additional Context (optional)</Label>
+                  <Textarea
+                    placeholder="Add any specific details or talking points..."
+                    value={customContext}
+                    onChange={(e) => setCustomContext(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+                <Button 
+                  onClick={handleGenerateAI} 
+                  disabled={generateEmail.isPending} 
+                  size="lg"
+                  className="w-full"
+                >
+                  {generateEmail.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Drafting Your Pitch...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Draft Pitch
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Select Template</Label>
+                  <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates?.map(template => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name} {template.is_default && "(Default)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleApplyTemplate} 
+                  disabled={!selectedTemplateId} 
+                  size="lg"
+                  className="w-full"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Use This Template
+                </Button>
+              </div>
+            )}
+
+            {deal && (
+              <div className="text-xs text-muted-foreground pt-2 border-t">
+                Related Proposal: {title?.name} - ${deal.value?.toLocaleString()}
+              </div>
+            )}
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {!useTemplate ? (
-            <div className="space-y-2">
-              <Label>Additional Context (optional)</Label>
-              <Textarea
-                placeholder="Add any specific details or context for the AI..."
-                value={customContext}
-                onChange={(e) => setCustomContext(e.target.value)}
-                rows={2}
-              />
-              <Button onClick={handleGenerateAI} disabled={generateEmail.isPending} className="w-full">
-                {generateEmail.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate with AI
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Select Template</Label>
-              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a template..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates?.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name} {template.is_default && "(Default)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleApplyTemplate} disabled={!selectedTemplateId} className="w-full">
-                <FileText className="h-4 w-4 mr-2" />
-                Apply Template
-              </Button>
-            </div>
-          )}
-
-          {generatedEmail && (
-            <Card>
-              <CardContent className="pt-4 space-y-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Subject</Label>
-                  <p className="font-medium">{generatedEmail.subject}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Body</Label>
-                  <p className="whitespace-pre-wrap text-sm">{generatedEmail.body}</p>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={handleCopy}>
-                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                  <Button size="sm" onClick={handleSave} disabled={saveEmail.isPending}>
-                    <Save className="h-4 w-4 mr-1" />
-                    Save to History
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {deal && (
-            <div className="text-xs text-muted-foreground">
-              Related Proposal: {title?.name} - ${deal.value?.toLocaleString()}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Review Modal - Safety Net */}
+      <PitchReviewModal
+        open={showReviewModal}
+        onOpenChange={setShowReviewModal}
+        email={generatedEmail}
+        onApprove={handleApproveAndSave}
+        isSaving={saveEmail.isPending}
+      />
+    </>
   );
 }
